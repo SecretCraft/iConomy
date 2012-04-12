@@ -1,11 +1,16 @@
 package com.iCo6.handlers;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.LinkedHashMap;
 
 import com.iCo6.command.Handler;
 import com.iCo6.command.Parser.Argument;
 import com.iCo6.command.exceptions.InvalidUsage;
 
+import com.iCo6.Constants;
 import com.iCo6.iConomy;
 import com.iCo6.system.Account;
 import com.iCo6.system.Accounts;
@@ -99,8 +104,58 @@ public class Payment extends Handler {
             template.add("amount", iConomy.format(amount));
 
             Messaging.send(to, tag + template.parse());
+            
+            // Logging to DB ico_pay_log
+           dbPayLog(from, to, amount);            
+            
+            
         }
 
         return false;
+    }
+    
+    
+    public void dbPayLog( Player from, Player to, Double amount ) {
+    	
+    	Connection conn = null;
+    	
+        try
+        {
+            String userName = Constants.Nodes.DatabaseUsername.toString();
+            String password = Constants.Nodes.DatabasePassword.toString();
+            String url = "jdbc:" + Constants.Nodes.DatabaseUrl.toString();
+            Class.forName ("com.mysql.jdbc.Driver").newInstance ();
+            conn = DriverManager.getConnection (url, userName, password);
+            //System.out.println ("Database connection established");
+        }
+        catch (Exception e)
+        {
+            System.err.println ("Cannot connect to database server");
+        }
+        finally
+        {
+            if (conn != null)
+            {
+               
+            	Statement s;
+				try {
+					
+					s = conn.createStatement();
+					s.execute("INSERT INTO `devel`.`ico_pay_log` (`id`, `from`, `to`, `amount`, `date`) VALUES (NULL, '" + from.getName() +"', '" + to.getName() + "', '" + amount + "', CURRENT_TIMESTAMP);");
+					s.close();
+	                conn.close ();
+	                //System.out.println ("Database connection terminated");
+	                
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					System.err.println ("Error message: " + e.getMessage ());
+					System.err.println ("Error number: " + e.getErrorCode ());
+				}
+    			
+            	
+            	
+            }
+        }        
+    	
     }
 }
