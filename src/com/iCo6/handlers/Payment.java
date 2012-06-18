@@ -96,7 +96,7 @@ public class Payment extends Handler {
         template.add("amount", iConomy.format(amount));
         Messaging.send(sender, tag + template.parse());
         
-        // Logging to DB ico_pay_log
+        // Logging to DB
         dbPayLog(from, name, amount); 
         
         Player to = iConomy.Server.getPlayer(name);
@@ -140,7 +140,7 @@ public class Payment extends Handler {
 				try {
 					
 					s = conn.createStatement();
-					s.execute("INSERT INTO `iConomyLog` (`id`, `from`, `to`, `amount`, `date`) VALUES (NULL, '" + from.getName() +"', '" + to + "', '" + amount + "', CURRENT_TIMESTAMP);");
+					s.execute("INSERT INTO `iConomyLog` (`id`, `command`, `from`, `to`, `amount`, `date`) VALUES (NULL, 'pay', '" + from.getName() +"', '" + to + "', '" + amount + "', CURRENT_TIMESTAMP);");
 					s.close();
 	                conn.close ();
 	                //System.out.println ("Database connection terminated");

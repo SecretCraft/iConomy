@@ -1,11 +1,16 @@
 package com.iCo6.handlers;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.LinkedHashMap;
 
 import com.iCo6.command.Handler;
 import com.iCo6.command.Parser.Argument;
 import com.iCo6.command.exceptions.InvalidUsage;
 
+import com.iCo6.Constants;
 import com.iCo6.iConomy;
 import com.iCo6.system.Account;
 import com.iCo6.system.Accounts;
@@ -14,6 +19,7 @@ import com.iCo6.util.Messaging;
 import com.iCo6.util.Template;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public class Give extends Handler {
 
@@ -54,7 +60,10 @@ public class Give extends Handler {
             Messaging.send(sender, tag + template.parse());
             return false;
         }
-
+        
+        // Logging to DB
+        dbPayLog((Player)sender, name, amount);
+        
         Account account = new Account(name);
         account.getHoldings().add(amount);
 
@@ -64,5 +73,45 @@ public class Give extends Handler {
 
         Messaging.send(sender, tag + template.parse());
         return false;
+    }
+    
+    public void dbPayLog( Player from, String to, Double amount ) {
+    	
+    	Connection conn = null;
+    	
+        try
+        {
+            String userName = Constants.Nodes.DatabaseUsername.toString();
+            String password = Constants.Nodes.DatabasePassword.toString();
+            String url = "jdbc:" + Constants.Nodes.DatabaseUrl.toString();
+            Class.forName ("com.mysql.jdbc.Driver").newInstance ();
+            conn = DriverManager.getConnection (url, userName, password);
+            //System.out.println ("Database connection established");
+        }
+        catch (Exception e)
+        {
+            System.err.println ("Cannot connect to database server");
+        }
+        finally
+        {
+            if (conn != null)
+            {
+               
+            	Statement s;
+				try {
+					
+					s = conn.createStatement();
+					s.execute("INSERT INTO `iConomyLog` (`id`, `command`, `from`, `to`, `amount`, `date`) VALUES (NULL, 'give', '" + from.getName() +"', '" + to + "', '" + amount + "', CURRENT_TIMESTAMP);");
+					s.close();
+	                conn.close ();
+	                //System.out.println ("Database connection terminated");
+	                
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					System.err.println ("Error message: " + e.getMessage ());
+					System.err.println ("Error number: " + e.getErrorCode ());
+				}
+            }
+        }
     }
 }
